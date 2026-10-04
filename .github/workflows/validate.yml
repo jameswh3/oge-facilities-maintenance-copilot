@@ -1,0 +1,74 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Compile Python
+        run: python -m compileall -q deployment
+
+      - name: Validate PowerShell syntax
+        shell: pwsh
+        run: |
+          $failed = @()
+          Get-ChildItem ./deployment -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count) {
+              $failed += "$($_.Name): $($errors.Message -join '; ')"
+            }
+          }
+          if ($failed.Count) {
+            throw ($failed -join [Environment]::NewLine)
+          }
+
+      - name: Validate portable artifacts
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          from xml.etree import ElementTree
+
+          notebook_path = Path("deploy_solution.ipynb")
+          notebook = json.loads(notebook_path.read_text(encoding="utf-8-sig"))
+          for index, cell in enumerate(notebook.get("cells", []), start=1):
+              if cell.get("cell_type") != "code":
+                  continue
+              if cell.get("execution_count") is not None:
+                  raise SystemExit(f"Notebook cell {index} has an execution count")
+              if cell.get("outputs"):
+                  raise SystemExit(f"Notebook cell {index} contains saved output")
+
+          for path in (
+              Path("diagrams/oge-solution-architecture.drawio"),
+              Path("diagrams/oge-solution-architecture.svg"),
+          ):
+              ElementTree.parse(path)
+
+      - name: Check whitespace
+        run: git diff --check "$(git hash-object -t tree /dev/null)" HEAD

@@ -1,0 +1,32 @@
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Generated deployment data and synthetic outputs
+generated/
+
+# Copilot Studio environment-specific pull metadata
+copilot-studio/.mcs/
+copilot-studio/infrastructure/connections/
+copilot-studio/translations/*.mcs.yml
+
+# Office and diagram editor temporary files
+~$*
+*.bkp
+*.dtmp
+diagrams/.$*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
