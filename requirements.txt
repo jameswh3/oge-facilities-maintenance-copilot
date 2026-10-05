@@ -1,7 +1,7 @@
 fabric-data-agent-sdk==0.1.32a0
 Faker==40.39.0
 mcp==1.30.0
-mssql-python==1.0.0
+mssql-python==1.15.0
 deltalake==1.6.3
 pandas==3.0.6
 pyarrow==25.0.1
